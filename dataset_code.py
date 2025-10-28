@@ -1,4 +1,9 @@
 from datasets import load_dataset
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+from sklearn.naive_bayes import MultinomialNB
+
+
 
 dataset = load_dataset("dair-ai/emotion")
 
@@ -25,3 +30,15 @@ emotion_names = dataset["train"].features["label"].names
 print(emotion_names)
 # ['sadness', 'joy', 'love', 'anger', 'fear', 'surprise']
 
+#converting the txt into numbers type shit so machine can understand stuff
+vectorizer = TfidfVectorizer(stop_words='english')
+X_train = vectorizer.fit_transform(train_texts)
+X_test = vectorizer.transform(test_texts)
+
+#testing and seeing stuff
+print(X_test[1])
+
+
+#traing model using Multinomial naive bayes for now 
+model = MultinomialNB()
+model.fit(X_train, train_labels)
