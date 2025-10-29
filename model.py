@@ -1,10 +1,10 @@
 import joblib
 
-# Load trained model & vectorizer
+#loading model and stuff
 model = joblib.load("svm_emotion_model.pkl")
 vectorizer = joblib.load("tfidf_vectorizer.pkl")
 
-# Emotion label names (same ordering as training dataset)
+#emotion names
 emotion_names = ["sadness", "joy", "love", "anger", "fear", "surprise"]
 
 while True:
@@ -14,13 +14,13 @@ while True:
         print("Goodbye!")
         break
     
-    # Convert input text to numerical vector form
+    #txt to numbers
     features = vectorizer.transform([text])
     
-    # Predict the emotion class index
+    #prediction of emotion no.
     pred_index = model.predict(features)[0]
     
-    # Convert index → label name
+    #convert index to label name using stuff
     predicted_emotion = emotion_names[pred_index]
     
     print(f"Predicted Emotion: 🟦 {predicted_emotion.upper()}")
