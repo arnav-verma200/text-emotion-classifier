@@ -1,9 +1,10 @@
 from datasets import load_dataset
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import LinearSVC
+from sklearn.metrics import classification_report
 
-from sklearn.naive_bayes import MultinomialNB
-
-
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 dataset = load_dataset("dair-ai/emotion")
 
@@ -39,6 +40,21 @@ X_test = vectorizer.transform(test_texts)
 print(X_test[1])
 
 
-#traing model using Multinomial naive bayes for now 
-model = MultinomialNB()
-model.fit(X_train, train_labels)
+#training model type shit
+svm_model = LinearSVC()
+svm_model.fit(X_train, train_labels)
+
+#prediction
+svm_pred = svm_model.predict(X_test)
+print("SVM Classification Report:")
+print(classification_report(test_labels, svm_pred, target_names=emotion_names))
+
+
+# Assuming emotion_names is your label list
+cm = confusion_matrix(test_labels, svm_pred)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=emotion_names)
+
+plt.figure(figsize=(8, 6))
+disp.plot(xticks_rotation='vertical')
+plt.title("Confusion Matrix - SVM Emotion Classifier")
+plt.show()
