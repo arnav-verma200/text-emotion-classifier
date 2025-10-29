@@ -152,4 +152,3 @@ This project is licensed under the **MIT License** — free to use & modify.
 ### ⭐ If you like this project — give it a star on GitHub!
 
 ---
-Would you like a **Light theme version** of the graphs or a **Streamlit UI** next? 🚀
