@@ -1,4 +1,3 @@
----
 
 # 🧠 Emotion Detection with Machine Learning
 
@@ -6,7 +5,6 @@ A text-based emotion classification model built using **Support Vector Machine (
 
 > **sadness | joy | love | anger | fear | surprise**
 
----
 
 ## 📌 Features
 
