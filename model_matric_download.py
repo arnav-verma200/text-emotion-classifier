@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score, roc_curve, auc, precision_recall_cur
 import seaborn as sns
 import numpy as np
 from sklearn.preprocessing import label_binarize
+from sklearn.model_selection import GridSearchCV
 
 
 dataset = load_dataset("dair-ai/emotion")
@@ -36,16 +37,19 @@ emotion_names = dataset["train"].features["label"].names
 print(emotion_names)
 
 #converting the txt into numbers type shit so machine can understand stuff
-vectorizer = TfidfVectorizer(stop_words='english')
+vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1,2), max_features=20000)
 X_train = vectorizer.fit_transform(train_texts)
 X_test = vectorizer.transform(test_texts)
 
 #testing and seeing stuff
 print(X_test[1])
 
-#training model type shit
-svm_model = SVC(kernel="linear", probability=True)
-svm_model.fit(X_train, train_labels)
+#training model type shit (using balanced class weights + tuning)
+params = {'C': [0.1, 1, 10]}
+grid = GridSearchCV(SVC(kernel="linear", probability=True, class_weight="balanced"), param_grid=params, cv=3, n_jobs=-1, verbose=1)
+grid.fit(X_train, train_labels)
+svm_model = grid.best_estimator_
+print(f"Best SVM Params: {grid.best_params_}")
 
 #prediction
 svm_pred = svm_model.predict(X_test)
@@ -59,66 +63,82 @@ cm_norm = cm.astype("float") / cm.sum(axis=1, keepdims=True)
 acc = accuracy_score(test_labels, svm_pred)
 
 
-
 # Dark Theme
 plt.style.use("dark_background")
-fig, axes = plt.subplots(3, 2, figsize=(24, 26))
-fig.suptitle("SVM Emotion Classifier - Evaluation Metrics (Dark Theme)", fontsize=24)
 
-
-
-#Confusion Matrix Counts
-sns.heatmap(cm, annot=True, fmt="d", cmap="inferno", ax=axes[0,0],
-            xticklabels=emotion_names, yticklabels=emotion_names)
-axes[0,0].set_title("Confusion Matrix (Counts)")
-axes[0,0].set_xlabel("Predicted")
-axes[0,0].set_ylabel("Actual")
+#Confusion Matrix (Counts)
+plt.figure(figsize=(10,8))
+sns.heatmap(cm, annot=True, fmt="d", cmap="inferno", xticklabels=emotion_names, yticklabels=emotion_names)
+plt.title("Confusion Matrix (Counts)")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.tight_layout()
+plt.savefig("confusion_matrix_counts.png", dpi=300)
+plt.close()
 
 #Normalized Confusion Matrix
-sns.heatmap(cm_norm, annot=True, fmt=".2f", cmap="viridis", ax=axes[0,1],
-            xticklabels=emotion_names, yticklabels=emotion_names)
-axes[0,1].set_title("Confusion Matrix (Normalized %)")
-axes[0,1].set_xlabel("Predicted")
-axes[0,1].set_ylabel("Actual")
+plt.figure(figsize=(10,8))
+sns.heatmap(cm_norm, annot=True, fmt=".2f", cmap="viridis", xticklabels=emotion_names, yticklabels=emotion_names)
+plt.title("Confusion Matrix (Normalized %)")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.tight_layout()
+plt.savefig("confusion_matrix_normalized.png", dpi=300)
+plt.close()
 
 #Probability matrix for ROC + PR
 y_prob = svm_model.predict_proba(X_test)
 y_test_bin = label_binarize(test_labels, classes=range(len(emotion_names)))
 
 #ROC Curves (Multiclass)
+plt.figure(figsize=(10,8))
 for i in range(len(emotion_names)):
     fpr, tpr, _ = roc_curve(y_test_bin[:, i], y_prob[:, i])
-    axes[1,0].plot(fpr, tpr, label=f"{emotion_names[i]} (AUC= {auc(fpr,tpr):.2f})")
+    plt.plot(fpr, tpr, label=f"{emotion_names[i]} (AUC= {auc(fpr,tpr):.2f})")
 
-axes[1,0].plot([0,1],[0,1],'--')
-axes[1,0].set_title("ROC Curves (One-vs-Rest)")
-axes[1,0].set_xlabel("False Positive Rate")
-axes[1,0].set_ylabel("True Positive Rate")
-axes[1,0].legend()
+plt.plot([0,1],[0,1],'--')
+plt.title("ROC Curves (One-vs-Rest)")
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.legend()
+plt.tight_layout()
+plt.savefig("roc_curves.png", dpi=300)
+plt.close()
 
 #Precision-Recall Curves
+plt.figure(figsize=(10,8))
 for i in range(len(emotion_names)):
     precision, recall, _ = precision_recall_curve(y_test_bin[:, i], y_prob[:, i])
-    axes[1,1].plot(recall, precision, label=emotion_names[i])
+    plt.plot(recall, precision, label=emotion_names[i])
 
-axes[1,1].set_title("Precision-Recall Curves")
-axes[1,1].set_xlabel("Recall")
-axes[1,1].set_ylabel("Precision")
-axes[1,1].legend()
+plt.title("Precision-Recall Curves")
+plt.xlabel("Recall")
+plt.ylabel("Precision")
+plt.legend()
+plt.tight_layout()
+plt.savefig("precision_recall_curves.png", dpi=300)
+plt.close()
 
 #Accuracy Bar Plot
-axes[2,0].bar(["Accuracy"], [acc], color="cyan")
-axes[2,0].set_ylim(0,1)
-axes[2,0].set_title(f"Overall Accuracy: {acc:.2%}")
-axes[2,0].set_ylabel("Score")
+plt.figure(figsize=(6,6))
+plt.bar(["Accuracy"], [acc], color="cyan")
+plt.ylim(0,1)
+plt.title(f"Overall Accuracy: {acc:.2%}")
+plt.ylabel("Score")
+plt.tight_layout()
+plt.savefig("accuracy_plot.png", dpi=300)
+plt.close()
 
 #Classification Score Summary Text
 report = classification_report(test_labels, svm_pred, target_names=emotion_names)
-axes[2,1].axis("off")
-axes[2,1].text(0, 0.5, report, fontsize=12)
-
+plt.figure(figsize=(8,6))
+plt.axis("off")
+plt.text(0, 0.5, report, fontsize=12)
+plt.title("Classification Report")
 plt.tight_layout()
-plt.subplots_adjust(top=0.93)
+plt.savefig("classification_report.png", dpi=300)
+plt.close()
+
 
 #downloading the model and stuff
 import joblib
